@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Image, Animated } from 'react-native';
+import { View, Text, StyleSheet, Animated } from 'react-native';
 
 export default function SplashScreen({ navigation }) {
   const fadeAnim = new Animated.Value(0);
@@ -37,10 +37,19 @@ export default function SplashScreen({ navigation }) {
           },
         ]}
       >
-        <Text style={styles.logo}>🎸</Text>
+        <View style={styles.logoWrapper}>
+          <Text style={styles.logo}>🎸</Text>
+        </View>
         <Text style={styles.title}>Chortify</Text>
         <Text style={styles.subtitle}>Aprenda violão do zero</Text>
       </Animated.View>
+      
+      {/* Elementos decorativos */}
+      <View style={styles.decorativeElements}>
+        <View style={[styles.circle, styles.circle1]} />
+        <View style={[styles.circle, styles.circle2]} />
+        <View style={[styles.circle, styles.circle3]} />
+      </View>
     </View>
   );
 };
@@ -48,7 +57,83 @@ export default function SplashScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#0a0a0a',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  logoContainer: {
+    alignItems: 'center',
+    zIndex: 2,
+  },
+  logoWrapper: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#FF6B6B',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 30,
+    elevation: 20,
+    shadowColor: '#FF6B6B',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+  },
+  logo: {
+    fontSize: 60,
+  },
+  title: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 10,
+    textAlign: 'center',
+    letterSpacing: 2,
+    textShadowColor: 'rgba(255, 107, 107, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 10,
+  },
+  subtitle: {
+    fontSize: 18,
+    color: '#CCCCCC',
+    textAlign: 'center',
+    fontWeight: '300',
+    letterSpacing: 1,
+    opacity: 0.9,
+  },
+  decorativeElements: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    zIndex: 1,
+  },
+  circle: {
+    position: 'absolute',
+    borderRadius: 1000,
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+  },
+  circle1: {
+    width: 200,
+    height: 200,
+    top: '10%',
+    right: '-10%',
+  },
+  circle2: {
+    width: 150,
+    height: 150,
+    bottom: '15%',
+    left: '-8%',
+    backgroundColor: 'rgba(255, 107, 107, 0.08)',
+  },
+  circle3: {
+    width: 100,
+    height: 100,
+    top: '20%',
+    left: '15%',
+    backgroundColor: 'rgba(255, 107, 107, 0.06)',
   },
   header: {
     backgroundColor: '#333',

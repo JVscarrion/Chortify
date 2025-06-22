@@ -3,9 +3,9 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   Alert, ActivityIndicator, ScrollView
 } from 'react-native';
-import { auth, db } from '../firebaseConfig';
+import { auth } from '../firebaseConfig';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { setupUserProfile } from '../userSetup';
 
 export default function Cadastro({ navigation }) {
   const [nome, setNome] = useState('');
@@ -31,13 +31,8 @@ export default function Cadastro({ navigation }) {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
       
-      await setDoc(doc(db, 'users', userCredential.user.uid), {
-        nome: nome,
-        email: email,
-        nivel: nivel,
-        criadoEm: serverTimestamp(),
-        atualizadoEm: serverTimestamp()
-      });
+      // Setup completo do perfil do usuário (substitui o setDoc anterior)
+      await setupUserProfile(userCredential.user, { nome: nome, nivel: nivel });
       
       Alert.alert('Sucesso', 'Conta criada com sucesso!', [
         { text: 'OK', onPress: () => navigation.replace('Home') }

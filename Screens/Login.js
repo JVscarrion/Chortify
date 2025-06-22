@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { auth } from '../firebaseConfig';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { setupUserProfile } from '../userSetup'; 
 
 export default function Login({ navigation }) {
   const [email, setEmail] = useState('');
@@ -19,7 +20,12 @@ export default function Login({ navigation }) {
 
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, senha);
+      const userCredential = await signInWithEmailAndPassword(auth, email, senha);
+      const user = userCredential.user;
+      
+      
+      await setupUserProfile(user);
+      
       navigation.replace('Home');
     } catch (error) {
       console.log(error);

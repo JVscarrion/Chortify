@@ -1,9 +1,10 @@
 // App.js
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useEffect } from 'react';
 import { initializeAulas } from './initFirestore';
+import { db } from './firebaseConfig';
+import { collection, getDocs, limit, query } from 'firebase/firestore';
 
 // Importando as telas
 import SplashScreen from './Screens/SplashScreen';
@@ -16,18 +17,40 @@ import Acordes from './Screens/Acordes';
 import Afinador from './Screens/Afinador';
 import Progresso from './Screens/Progresso';
 
-
-
 // Firebase init
-import './firebaseConfig'; // Já inicializa o Firebase
-
+import './firebaseConfig';
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
+  const [isInitialized, setIsInitialized] = useState(false);
+
   useEffect(() => {
-    // aqui está ok
+    initializeAppData();
   }, []);
+
+  const initializeAppData = async () => {
+    try {
+      // Verificar se já existem aulas no banco
+      const aulasQuery = query(collection(db, 'aulas'), limit(1));
+      const aulasSnapshot = await getDocs(aulasQuery);
+      
+      if (aulasSnapshot.empty) {
+        console.log('🚀 Primeira execução - Inicializando aulas...');
+        await initializeAulas();
+        console.log('✅ Aulas inicializadas com sucesso!');
+      } else {
+        console.log('✅ Aulas já existem no banco de dados');
+      }
+      
+      setIsInitialized(true);
+      
+    } catch (error) {
+      console.error('❌ Erro na inicialização:', error);
+      // Mesmo com erro, permite que o app continue
+      setIsInitialized(true);
+    }
+  };
 
   return (
     <NavigationContainer>
@@ -48,4 +71,3 @@ export default function App() {
     </NavigationContainer>
   );
 }
-

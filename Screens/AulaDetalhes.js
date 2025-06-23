@@ -3,17 +3,52 @@ import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
   Alert, Modal
 } from 'react-native';
+import { db, auth } from '../firebaseConfig';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
 
 export default function AulaDetalhes({ route, navigation }) {
-  const { aula } = route.params;
+  const { aula, aulaIndex, aulasCompletadas, onAulaCompleted } = route.params;
   const [showCongrats, setShowCongrats] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleCompleteAula = () => {
-    setShowCongrats(true);
-    setTimeout(() => {
-      setShowCongrats(false);
-      navigation.goBack();
-    }, 2000);
+  const handleCompleteAula = async () => {
+    try {
+      setLoading(true);
+      const user = auth.currentUser;
+      
+      if (user) {
+        // Verificar se esta é a próxima aula a ser completada
+        if (aulaIndex === aulasCompletadas) {
+          // Incrementar o contador de aulas completadas
+          const novoContador = aulasCompletadas + 1;
+          
+          await updateDoc(doc(db, 'users', user.uid), {
+            'progresso.aulasCompletadas': novoContador,
+            'progresso.ultimoAcesso': new Date().toISOString()
+          });
+          
+          setShowCongrats(true);
+          
+          setTimeout(() => {
+            setShowCongrats(false);
+            // Chamar callback para atualizar a tela anterior
+            if (onAulaCompleted) {
+              onAulaCompleted();
+            }
+            navigation.goBack();
+          }, 2000);
+        } else if (aulaIndex < aulasCompletadas) {
+          Alert.alert('Atenção', 'Esta aula já foi concluída!');
+        } else {
+          Alert.alert('Atenção', 'Você deve completar as aulas em ordem!');
+        }
+      }
+    } catch (error) {
+      console.log('Erro ao marcar aula como concluída:', error);
+      Alert.alert('Erro', 'Não foi possível marcar a aula como concluída');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getNivelColor = (nivel) => {
@@ -78,10 +113,13 @@ export default function AulaDetalhes({ route, navigation }) {
 
       <View style={styles.footer}>
         <TouchableOpacity
-          style={styles.completeButton}
+          style={[styles.completeButton, loading && styles.completeButtonDisabled]}
           onPress={handleCompleteAula}
+          disabled={loading}
         >
-          <Text style={styles.completeButtonText}>✓ Marcar como Concluída</Text>
+          <Text style={styles.completeButtonText}>
+            {loading ? 'Marcando...' : '✓ Marcar como Concluída'}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -211,6 +249,9 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     padding: 15,
     alignItems: 'center',
+  },
+  completeButtonDisabled: {
+    backgroundColor: '#666',
   },
   completeButtonText: {
     color: '#fff',

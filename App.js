@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { initializeAulas } from './initFirestore';
 import { db } from './firebaseConfig';
 import { collection, getDocs, limit, query } from 'firebase/firestore';
@@ -21,6 +22,27 @@ import Progresso from './Screens/Progresso';
 import './firebaseConfig';
 
 const Stack = createNativeStackNavigator();
+
+
+function BottomTabs() {
+  const Tab = createBottomTabNavigator();
+  return(
+    <Tab.Navigator screenOptions={{
+      headerStyle:{backgroundColor: '#1a1a1a'},
+      headerTintColor: 'white',
+      tabBarActiveBackgroundColor: '#1a1a1a',
+      tabBarInactiveBackgroundColor: '#1a1a1a',
+      tabBarActiveTintColor: 'black'
+    }}>
+      <Tab.Screen name="Home" component={Home} />
+      <Tab.Screen name="Aulas" component={Aulas} />
+      <Tab.Screen name="Acordes" component={Acordes} />
+      <Tab.Screen name="Afinador" component={Afinador} />
+      <Tab.Screen name="Progresso" component={Progresso} />
+    </Tab.Navigator>
+  )
+}
+
 
 export default function App() {
   const [isInitialized, setIsInitialized] = useState(false);
@@ -61,13 +83,16 @@ export default function App() {
         <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="Cadastro" component={Cadastro} />
-        <Stack.Screen name="Home" component={Home} />
-        <Stack.Screen name="Aulas" component={Aulas} />
         <Stack.Screen name="AulaDetalhes" component={AulaDetalhes} />
+        <Stack.Screen options={{headerShown:false}} name='Home' component={BottomTabs}/>
+        {/* <Stack.Screen name="Home" component={Home} />
+        <Stack.Screen name="Aulas" component={Aulas} />
         <Stack.Screen name="Acordes" component={Acordes} />
         <Stack.Screen name="Afinador" component={Afinador} />
-        <Stack.Screen name="Progresso" component={Progresso} />
+        <Stack.Screen name="Progresso" component={Progresso} /> */}
       </Stack.Navigator>
     </NavigationContainer>
   );
+
+
 }

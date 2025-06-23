@@ -4,26 +4,42 @@ import {
   ActivityIndicator, Alert
 } from 'react-native';
 import { db, auth } from '../firebaseConfig';
-import { collection, query, where, getDocs, doc, getDoc, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, orderBy, updateDoc } from 'firebase/firestore';
 
 export default function Aulas({ navigation }) {
   const [aulas, setAulas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userLevel, setUserLevel] = useState('');
+  const [aulasConcluidas, setAulasConcluidas] = useState([]);
+  const [aulasCompletadas, setAulasCompletadas] = useState(0);
+  const [todasConcluidas, setTodasConcluidas] = useState(false);
 
   useEffect(() => {
     fetchAulas();
   }, []);
 
+  useEffect(() => {
+    // Verifica se todas as aulas foram concluídas
+    if (aulas.length > 0 && aulasCompletadas >= aulas.length) {
+      setTodasConcluidas(true);
+    } else {
+      setTodasConcluidas(false);
+    }
+  }, [aulas, aulasCompletadas]);
+
   const fetchAulas = async () => {
     try {
       const user = auth.currentUser;
       if (user) {
-        // Buscar nível do usuário
+        // Buscar dados do usuário
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         const userData = userDoc.data();
         const nivel = userData?.nivel || 'iniciante';
+        const progresso = userData?.progresso || {};
+        const completadas = progresso.aulasCompletadas || 0;
+        
         setUserLevel(nivel);
+        setAulasCompletadas(completadas);
         
         // Buscar aulas do nível do usuário
         const q = query(
@@ -40,12 +56,56 @@ export default function Aulas({ navigation }) {
         });
         
         setAulas(aulasData);
+        
+        // Criar array de aulas concluídas baseado no número
+        const concluidas = [];
+        for (let i = 0; i < Math.min(completadas, aulasData.length); i++) {
+          if (aulasData[i]) {
+            concluidas.push(aulasData[i].id);
+          }
+        }
+        setAulasConcluidas(concluidas);
       }
     } catch (error) {
       console.log('Erro ao buscar aulas:', error);
       Alert.alert('Erro', 'Não foi possível carregar as aulas');
     }
     setLoading(false);
+  };
+
+  const handleAvancarNivel = async () => {
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        const proximoNivel = userLevel === 'iniciante' ? 'intermediário' : 
+                           userLevel === 'intermediário' ? 'avançado' : 'avançado';
+        
+        // Atualizar nível do usuário no Firebase
+        await updateDoc(doc(db, 'users', user.uid), {
+          nivel: proximoNivel,
+          aulasConcluidas: [] // Limpar aulas concluídas para o novo nível
+        });
+        
+        Alert.alert(
+          'Parabéns! 🎉',
+          `Você foi promovido para o nível ${proximoNivel}!`,
+          [
+            {
+              text: 'Continuar',
+              onPress: () => {
+                setUserLevel(proximoNivel);
+                setAulasConcluidas([]);
+                setTodasConcluidas(false);
+                fetchAulas();
+              }
+            }
+          ]
+        );
+      }
+    } catch (error) {
+      console.log('Erro ao avançar nível:', error);
+      Alert.alert('Erro', 'Não foi possível avançar de nível');
+    }
   };
 
   const getNivelColor = (nivel) => {
@@ -57,14 +117,31 @@ export default function Aulas({ navigation }) {
     }
   };
 
+  const isAulaConcluida = (aulaId, index) => {
+    // Verifica se a aula está entre as completadas baseado no índice
+    return index < aulasCompletadas;
+  };
+
   const renderAula = ({ item, index }) => (
     <TouchableOpacity
       style={styles.aulaCard}
-      onPress={() => navigation.navigate('AulaDetalhes', { aula: item })}
+      onPress={() => navigation.navigate('AulaDetalhes', { 
+        aula: item, 
+        aulaIndex: index,
+        aulasCompletadas: aulasCompletadas,
+        onAulaCompleted: fetchAulas 
+      })}
     >
       <View style={styles.aulaHeader}>
-        <View style={styles.aulaNumero}>
-          <Text style={styles.aulaNumeroText}>{index + 1}</Text>
+        <View style={[
+          styles.aulaNumero, 
+          { backgroundColor: isAulaConcluida(item.id, index) ? '#4CAF50' : '#FF6B6B' }
+        ]}>
+          {isAulaConcluida(item.id, index) ? (
+            <Text style={styles.aulaNumeroText}>✓</Text>
+          ) : (
+            <Text style={styles.aulaNumeroText}>{index + 1}</Text>
+          )}
         </View>
         <View style={styles.aulaInfo}>
           <Text style={styles.aulaTitulo}>{item.titulo}</Text>
@@ -105,6 +182,37 @@ export default function Aulas({ navigation }) {
           </View>
         </View>
       </View>
+
+      {/* Botão de Avançar Nível */}
+      {todasConcluidas && userLevel !== 'avançado' && (
+        <View style={styles.levelUpContainer}>
+          <TouchableOpacity
+            style={styles.levelUpButton}
+            onPress={handleAvancarNivel}
+          >
+            <Text style={styles.levelUpButtonText}>
+              🎓 Avançar para {userLevel === 'iniciante' ? 'Intermediário' : 'Avançado'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Progresso */}
+      {aulas.length > 0 && (
+        <View style={styles.progressContainer}>
+          <Text style={styles.progressText}>
+            Progresso: {aulasCompletadas}/{aulas.length} aulas concluídas
+          </Text>
+          <View style={styles.progressBar}>
+            <View 
+              style={[
+                styles.progressFill, 
+                { width: `${(aulasCompletadas / aulas.length) * 100}%` }
+              ]} 
+            />
+          </View>
+        </View>
+      )}
 
       {aulas.length === 0 ? (
         <View style={styles.emptyContainer}>
@@ -185,6 +293,47 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
+  levelUpContainer: {
+    padding: 20,
+    backgroundColor: '#333',
+  },
+  levelUpButton: {
+    backgroundColor: '#4CAF50',
+    borderRadius: 25,
+    padding: 15,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  levelUpButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  progressContainer: {
+    padding: 20,
+    backgroundColor: '#2a2a2a',
+  },
+  progressText: {
+    color: '#fff',
+    fontSize: 14,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  progressBar: {
+    height: 8,
+    backgroundColor: '#444',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#4CAF50',
+    borderRadius: 4,
+  },
   aulasList: {
     padding: 20,
   },
@@ -203,7 +352,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FF6B6B',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,

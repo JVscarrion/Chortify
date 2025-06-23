@@ -77,7 +77,7 @@ export default function Home({ navigation }) {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.userInfo}>
-          <Text style={styles.welcomeText}>Chortify {userData?.nome}! 🎸</Text>
+          <Text style={styles.welcomeText}>Olá, {userData?.nome}! 🎸</Text>
           <View style={styles.nivelBadge}>
             <Text style={styles.nivelIcon}>
               {getNivelIcon(userData?.nivel)}
@@ -93,7 +93,7 @@ export default function Home({ navigation }) {
         
         <TouchableOpacity
           style={styles.logoutButton}
-          onPress={handleLogout}
+          onPress={() => navigation.navigate('Login')}
         >
           <Text style={styles.logoutText}>Sair</Text>
         </TouchableOpacity>

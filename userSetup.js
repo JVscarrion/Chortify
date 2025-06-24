@@ -10,7 +10,7 @@ export const setupUserProfile = async (user, additionalData = {}) => {
     const userDoc = await getDoc(userRef);
     
     if (!userDoc.exists()) {
-      // Criar novo perfil de usuário
+      // Criar novo perfil de usuário com progresso específico por nível
       const userData = {
         nome: additionalData.nome || user.displayName || 'Usuário',
         email: user.email,
@@ -18,7 +18,20 @@ export const setupUserProfile = async (user, additionalData = {}) => {
         criadoEm: new Date().toISOString(),
         ultimoAcesso: new Date().toISOString(),
         progresso: {
-          aulasCompletadas: 0,
+          // Progresso específico por nível
+          iniciante: {
+            aulasCompletadas: 0,
+            ultimaAula: -1
+          },
+          intermediário: {
+            aulasCompletadas: 0,
+            ultimaAula: -1
+          },
+          avançado: {
+            aulasCompletadas: 0,
+            ultimaAula: -1
+          },
+          // Stats gerais
           acordesAprendidos: 0,
           tempoEstudo: 0
         }
@@ -28,8 +41,42 @@ export const setupUserProfile = async (user, additionalData = {}) => {
       console.log('✅ Perfil do usuário criado:', userData);
       return userData;
     } else {
-      // Atualizar último acesso
+      // Atualizar último acesso e verificar se precisa migrar estrutura antiga
       const existingData = userDoc.data();
+      
+      // Migrar estrutura antiga se necessário
+      if (existingData.progresso && typeof existingData.progresso.aulasCompletadas === 'number') {
+        console.log('🔄 Migrando estrutura de progresso...');
+        const progressoAntigo = existingData.progresso.aulasCompletadas;
+        const nivelAtual = existingData.nivel || 'iniciante';
+        
+        const novoProgresso = {
+          iniciante: {
+            aulasCompletadas: nivelAtual === 'iniciante' ? progressoAntigo : 0,
+            ultimaAula: nivelAtual === 'iniciante' ? progressoAntigo - 1 : -1
+          },
+          intermediário: {
+            aulasCompletadas: nivelAtual === 'intermediário' ? progressoAntigo : 0,
+            ultimaAula: nivelAtual === 'intermediário' ? progressoAntigo - 1 : -1
+          },
+          avançado: {
+            aulasCompletadas: nivelAtual === 'avançado' ? progressoAntigo : 0,
+            ultimaAula: nivelAtual === 'avançado' ? progressoAntigo - 1 : -1
+          },
+          acordesAprendidos: existingData.progresso.acordesAprendidos || 0,
+          tempoEstudo: existingData.progresso.tempoEstudo || 0
+        };
+        
+        await setDoc(userRef, {
+          ...existingData,
+          progresso: novoProgresso,
+          ultimoAcesso: new Date().toISOString()
+        });
+        
+        return { ...existingData, progresso: novoProgresso };
+      }
+      
+      // Apenas atualizar último acesso se estrutura já está correta
       await setDoc(userRef, {
         ...existingData,
         ultimoAcesso: new Date().toISOString()
@@ -75,3 +122,4 @@ export const getUserProfile = async (userId) => {
     throw error;
   }
 };
+

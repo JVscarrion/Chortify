@@ -19,13 +19,34 @@ export default function AulaDetalhes({ route, navigation }) {
       if (user) {
         // Verificar se esta é a próxima aula a ser completada
         if (aulaIndex === aulasCompletadas) {
-          // Incrementar o contador de aulas completadas
-          const novoContador = aulasCompletadas + 1;
+          // Buscar dados atuais do usuário
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          const userData = userDoc.data();
+          const nivelAtual = userData?.nivel || 'iniciante';
           
-          await updateDoc(doc(db, 'users', user.uid), {
-            'progresso.aulasCompletadas': novoContador,
-            'progresso.ultimoAcesso': new Date().toISOString()
-          });
+          // Preparar atualização do progresso
+          let updateData = {};
+          
+          // Verificar se tem a nova estrutura de progresso
+          if (userData?.progresso && userData.progresso[nivelAtual]) {
+            // Nova estrutura - atualizar progresso específico do nível
+            updateData[`progresso.${nivelAtual}.aulasCompletadas`] = aulasCompletadas + 1;
+            updateData[`progresso.${nivelAtual}.ultimaAula`] = aulaIndex;
+          } else {
+            // Estrutura antiga ou primeira vez - criar/atualizar
+            updateData[`progresso.${nivelAtual}.aulasCompletadas`] = aulasCompletadas + 1;
+            updateData[`progresso.${nivelAtual}.ultimaAula`] = aulaIndex;
+            
+            // Manter campos existentes se houver
+            if (userData?.progresso) {
+              updateData['progresso.acordesAprendidos'] = userData.progresso.acordesAprendidos || 0;
+              updateData['progresso.tempoEstudo'] = userData.progresso.tempoEstudo || 0;
+            }
+          }
+          
+          updateData['progresso.ultimoAcesso'] = new Date().toISOString();
+          
+          await updateDoc(doc(db, 'users', user.uid), updateData);
           
           setShowCongrats(true);
           

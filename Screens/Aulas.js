@@ -35,8 +35,19 @@ export default function Aulas({ navigation }) {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         const userData = userDoc.data();
         const nivel = userData?.nivel || 'iniciante';
-        const progresso = userData?.progresso || {};
-        const completadas = progresso.aulasCompletadas || 0;
+        
+        // Buscar progresso específico do nível atual
+        let completadas = 0;
+        if (userData?.progresso) {
+          // Nova estrutura com progresso por nível
+          if (userData.progresso[nivel]) {
+            completadas = userData.progresso[nivel].aulasCompletadas || 0;
+          }
+          // Fallback para estrutura antiga (migração automática)
+          else if (typeof userData.progresso.aulasCompletadas === 'number') {
+            completadas = userData.progresso.aulasCompletadas || 0;
+          }
+        }
         
         setUserLevel(nivel);
         setAulasCompletadas(completadas);
@@ -83,7 +94,8 @@ export default function Aulas({ navigation }) {
         // Atualizar nível do usuário no Firebase
         await updateDoc(doc(db, 'users', user.uid), {
           nivel: proximoNivel,
-          aulasConcluidas: [] // Limpar aulas concluídas para o novo nível
+          ultimaAtualizacao: new Date().toISOString()
+          // NÃO limpar progresso - cada nível mantém seu próprio progresso
         });
         
         Alert.alert(
@@ -95,6 +107,7 @@ export default function Aulas({ navigation }) {
               onPress: () => {
                 setUserLevel(proximoNivel);
                 setAulasConcluidas([]);
+                setAulasCompletadas(0); // Será definido corretamente no fetchAulas
                 setTodasConcluidas(false);
                 fetchAulas();
               }

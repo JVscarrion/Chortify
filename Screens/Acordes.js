@@ -4,9 +4,11 @@ import {
   TextInput
 } from 'react-native';
 
+
 export default function Acordes({ navigation }) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('todos');
+  const [searchTerm, setSearchTerm] = useState(''); // Estado para busca (input do usuário)
+  const [selectedCategory, setSelectedCategory] = useState('todos'); 
+  // Estado para a categoria selecionada (todos, maior, menor, setima)
 
   const acordesData = [
     // ACORDES MAIORES
@@ -104,6 +106,7 @@ export default function Acordes({ navigation }) {
     { id: 'setima', nome: 'Sétimas', cor: '#FF9800' }
   ];
 
+  // Função para retornar a cor do badge de nível
   const getNivelColor = (nivel) => {
     switch(nivel) {
       case 'iniciante': return '#4CAF50';
@@ -113,6 +116,7 @@ export default function Acordes({ navigation }) {
     }
   };
 
+  // Filtra os acordes conforme a busca e a categoria selecionada
   const filteredAcordes = acordesData.filter(acorde => {
     const matchesSearch = acorde.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          acorde.nomeCompleto.toLowerCase().includes(searchTerm.toLowerCase());

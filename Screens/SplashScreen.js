@@ -3,26 +3,32 @@ import { View, Text, StyleSheet, Animated } from 'react-native';
 
 export default function SplashScreen({ navigation }) {
   const fadeAnim = new Animated.Value(0);
+  // Cria uma animação de opacidade começando de 0 (invisível)
   const scaleAnim = new Animated.Value(0.3);
+  // Cria uma animação de escala começando bem pequena (0.3)
+
 
   useEffect(() => {
+     // Executa duas animações em paralelo ao abrir a tela:
     Animated.parallel([
+      // Animação de fade (transparente -> visível)
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 1000,
         useNativeDriver: true,
       }),
+       // Animação de escala (crescendo até tamanho normal)
       Animated.spring(scaleAnim, {
         toValue: 1,
         friction: 4,
         useNativeDriver: true,
       }),
     ]).start();
-
+     // Timer que espera 2,5 segundos antes de navegar automaticamente para o Login
     const timer = setTimeout(() => {
       navigation.replace('Login');
     }, 2500);
-
+     // Limpa o timer se o componente desmontar antes do tempo
     return () => clearTimeout(timer);
   }, []);
 
@@ -44,7 +50,6 @@ export default function SplashScreen({ navigation }) {
         <Text style={styles.subtitle}>Aprenda violão do zero</Text>
       </Animated.View>
       
-      {/* Elementos decorativos */}
       <View style={styles.decorativeElements}>
         <View style={[styles.circle, styles.circle1]} />
         <View style={[styles.circle, styles.circle2]} />

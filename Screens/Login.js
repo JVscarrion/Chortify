@@ -10,34 +10,40 @@ import { setupUserProfile } from '../userSetup';
 export default function Login({ navigation }) {
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  // Estados para armazenar o email e a senha digitados
   const [loading, setLoading] = useState(false);
-
+  // Estado para controlar o carregamento 
+  
+  // Função que faz login no Firebase
   const handleLogin = async () => {
+    // Verifica se os campos estão preenchidos
     if (!email || !senha) {
       Alert.alert('Erro', 'Preencha todos os campos');
       return;
     }
 
-    setLoading(true);
+    setLoading(true); // Mostra indicador de carregamento
     try {
+      // Faz login no Firebase Authentication
       const userCredential = await signInWithEmailAndPassword(auth, email, senha);
       const user = userCredential.user;
       
-      
+       // Verifica se o perfil do usuário está configurado corretamente (nível, progresso, etc.)
       await setupUserProfile(user);
       
+       // Redireciona para a tela Home e remove a tela de Login da pilha
       navigation.replace('Home');
     } catch (error) {
       console.log(error);
       Alert.alert('Erro', 'Email ou senha incorretos');
     }
-    setLoading(false);
+    setLoading(false); // Esconde o indicador de carregamento
   };
 
   return (
     <KeyboardAvoidingView 
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'} // Sobe a tela no iOS quando o teclado aparece
     >
       <View style={styles.content}>
         <Text style={styles.logo}>🎸</Text>

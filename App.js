@@ -48,7 +48,8 @@ export default function App() {
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    initializeAppData();
+    initializeAppData(); // Chamada para inicializar os dados do app
+    forceReinitialize(); // Chamada para forçar reinicialização, remover em produção
   }, []);
 
   const initializeAppData = async () => {
@@ -73,6 +74,23 @@ export default function App() {
       setIsInitialized(true);
     }
   };
+
+  // função para forçar reinicialização
+const forceReinitialize = async () => {
+  try {
+    // Deletar todas as aulas existentes
+    const aulasSnapshot = await getDocs(collection(db, 'aulas'));
+    const deletePromises = aulasSnapshot.docs.map(doc => deleteDoc(doc.ref));
+    await Promise.all(deletePromises);
+    
+    // Reinicializar com todas as aulas
+    await initializeAulas();
+    console.log('✅ Aulas reinicializadas!');
+  } catch (error) {
+    console.error('❌ Erro na reinicialização:', error);
+  }
+};
+
 
   return (
     <NavigationContainer>
